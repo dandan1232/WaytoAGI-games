@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { ToolMode } from '../core/levels';
 
 export class Effects {
   private readonly beamPositions = new Float32Array(12 * 6);
@@ -18,8 +19,11 @@ export class Effects {
     scene.add(this.beam, this.particles, this.ring);
   }
 
-  update(dt: number, spraying: boolean, hit: THREE.Intersection | undefined, camera: THREE.Camera, radius: number, nozzle: { x: number; y: number }): void {
-    this.beam.visible = spraying && !!hit;
+  update(dt: number, spraying: boolean, hit: THREE.Intersection | undefined, camera: THREE.Camera, radius: number, nozzle: { x: number; y: number }, mode: ToolMode = 'water'): void {
+    this.beam.visible = spraying && !!hit && (mode === 'water' || mode === 'extraction');
+    this.beam.material.color.set(mode === 'extraction' ? 0xbfa57a : 0xd9faff);
+    this.particles.material.size = mode === 'steam' ? 0.18 : mode === 'squeegee' ? 0.025 : 0.045;
+    this.particles.material.color.set(mode === 'extraction' ? 0xc5ad82 : mode === 'steam' ? 0xffffff : 0xc5f9ff);
     this.ring.visible = spraying && !!hit?.object.userData.surfaceId;
     if (spraying && hit) {
       const origin = new THREE.Vector3(nozzle.x, nozzle.y, -0.4).unproject(camera);
@@ -32,18 +36,20 @@ export class Effects {
       this.ring.position.copy(hit.point).addScaledVector(normal, 0.012);
       this.ring.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
       this.ring.scale.setScalar(radius);
+      if (mode === 'squeegee' || mode === 'extraction') this.ring.scale.set(radius * 1.5, radius * 0.5, radius);
       for (let j = 0; j < 5; j++) {
         const i = this.index++ % this.life.length;
         this.positions.set([hit.point.x, hit.point.y + 0.025, hit.point.z], i * 3);
-        this.velocities.set([(Math.random() - 0.5) * 1.5 + normal.x, 0.5 + Math.random() * 1.5 + normal.y * 0.4, (Math.random() - 0.5) * 1.5 + normal.z], i * 3);
-        this.life[i] = 0.18 + Math.random() * 0.3;
+        const flow = mode === 'extraction' ? origin.clone().sub(hit.point).normalize().multiplyScalar(2) : normal;
+        this.velocities.set([(Math.random() - 0.5) + flow.x, 0.5 + Math.random() + flow.y * 0.4, (Math.random() - 0.5) + flow.z], i * 3);
+        this.life[i] = mode === 'steam' ? 0.6 : 0.18 + Math.random() * 0.3;
       }
     }
     for (let i = 0; i < this.life.length; i++) {
       if (this.life[i] <= 0) continue;
       this.life[i] -= dt;
       if (this.life[i] <= 0) { this.positions[i * 3 + 1] = -100; continue; }
-      this.velocities[i * 3 + 1] -= dt * 4;
+      this.velocities[i * 3 + 1] += dt * (mode === 'steam' ? 1.2 : -4);
       for (let c = 0; c < 3; c++) this.positions[i * 3 + c] += this.velocities[i * 3 + c] * dt;
     }
     this.geometry.attributes.position.needsUpdate = true;

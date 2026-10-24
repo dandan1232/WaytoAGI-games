@@ -1,9 +1,13 @@
+import type { ToolMode } from '../core/levels';
 export class WaterAudio {
   private context?: AudioContext;
   private source?: AudioBufferSourceNode;
   private gate?: GainNode;
-  private audible?: boolean;
+  private audible?: number;
   muted = false;
+  volume = 0.65;
+  mode: ToolMode = 'water';
+  private filter?: BiquadFilterNode;
 
   ensure(): void {
     try {
@@ -13,7 +17,7 @@ export class WaterAudio {
         const data = buffer.getChannelData(0); let low = 0;
         for (let i = 0; i < data.length; i++) { low = low * 0.82 + (Math.random() * 2 - 1) * 0.18; data[i] = low; }
         this.source = this.context.createBufferSource(); this.source.buffer = buffer; this.source.loop = true;
-        const filter = this.context.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 420;
+        const filter = this.filter = this.context.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 420;
         this.gate = this.context.createGain(); this.gate.gain.value = 0;
         this.source.connect(filter).connect(this.gate).connect(this.context.destination); this.source.start();
       }
@@ -23,10 +27,11 @@ export class WaterAudio {
 
   spray(active: boolean): void {
     if (!this.context || !this.gate) return;
-    const next = active && !this.muted;
+    const next = active && !this.muted ? this.volume * (this.mode === 'steam' ? 0.2 : 0.28) : 0;
     if (this.audible === next) return;
     this.audible = next;
-    this.gate.gain.setTargetAtTime(next ? 0.25 : 0, this.context.currentTime, 0.035);
+    if (this.filter) this.filter.frequency.value = this.mode === 'steam' ? 1100 : this.mode === 'extraction' ? 180 : this.mode === 'squeegee' ? 1800 : 420;
+    this.gate.gain.setTargetAtTime(next, this.context.currentTime, 0.035);
   }
 
   chime(final = false): void {
@@ -36,7 +41,7 @@ export class WaterAudio {
       const oscillator = context.createOscillator(); const gain = context.createGain();
       const start = context.currentTime + i * 0.12;
       oscillator.type = 'sine'; oscillator.frequency.value = frequency;
-      gain.gain.setValueAtTime(0, start); gain.gain.linearRampToValueAtTime(0.06, start + 0.015); gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.65);
+      gain.gain.setValueAtTime(0, start); gain.gain.linearRampToValueAtTime(Math.max(0.0001, 0.09 * this.volume), start + 0.015); gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.65);
       oscillator.connect(gain).connect(context.destination); oscillator.start(start); oscillator.stop(start + 0.7);
       oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
     });

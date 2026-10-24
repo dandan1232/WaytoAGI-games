@@ -3,6 +3,15 @@ export const TASKS = [
   { id: 'bicycle', name: '单车车架', subtitle: '让黄色重新闪亮', icon: 'bike' },
   { id: 'bench', name: '木质长椅', subtitle: '找回木头的温度', icon: 'bench' },
   { id: 'paving', name: '庭院地砖', subtitle: '洗出脚下的好风景', icon: 'tiles' },
+  { id: 'window-left', name: '左侧玻璃', subtitle: '收走水迹', icon: 'window' },
+  { id: 'window-center', name: '中央玻璃', subtitle: '让晴天透进来', icon: 'window' },
+  { id: 'window-right', name: '右侧玻璃', subtitle: '找回清晰的风景', icon: 'window' },
+  { id: 'stove', name: '油污灶台', subtitle: '带走烹饪后的油污', icon: 'steam' },
+  { id: 'backsplash', name: '瓷砖背墙', subtitle: '洗净每一道缝隙', icon: 'tiles' },
+  { id: 'kitchen-floor', name: '厨房地砖', subtitle: '恢复清爽', icon: 'tiles' },
+  { id: 'sofa', name: '布艺沙发', subtitle: '喷洒并抽走污水', icon: 'sofa' },
+  { id: 'cushion', name: '柔软靠垫', subtitle: '照顾每一个角落', icon: 'sofa' },
+  { id: 'rug', name: '客厅地毯', subtitle: '洗出织物原色', icon: 'tiles' },
 ] as const;
 export type TaskId = (typeof TASKS)[number]['id'];
 
@@ -59,7 +68,7 @@ export class CleaningSession {
   readonly surfaces = new Map<string, { spec: SurfaceSpec; grid: DirtGrid }>();
   private finished = new Set<TaskId>();
 
-  constructor(specs: readonly SurfaceSpec[], saved: Record<string, number[]> = {}) {
+  constructor(specs: readonly SurfaceSpec[], saved: Record<string, number[]> = {}, readonly taskIds: readonly TaskId[] = ['bicycle', 'bench', 'paving']) {
     for (const spec of specs) {
       if (!Number.isFinite(spec.area) || spec.area <= 0 || this.surfaces.has(spec.id)) throw new Error('Invalid surface specification');
       this.surfaces.set(spec.id, { spec, grid: new DirtGrid(spec.width, spec.height, saved[spec.id]) });
@@ -85,12 +94,12 @@ export class CleaningSession {
     return weight > 0 ? cleaned / weight : 0;
   }
 
-  get completed(): boolean { return TASKS.every((task) => this.finished.has(task.id)); }
+  get completed(): boolean { return this.taskIds.length > 0 && this.taskIds.every((id) => this.finished.has(id)); }
   isFinished(task: TaskId): boolean { return this.finished.has(task); }
 
   settle(): TaskId[] {
     const newlyFinished: TaskId[] = [];
-    for (const { id } of TASKS) {
+    for (const id of this.taskIds) {
       if (!this.finished.has(id) && this.taskProgress(id) >= COMPLETION_THRESHOLD) {
         for (const { spec, grid } of this.surfaces.values()) { if (spec.task === id) grid.clear(); }
         this.finished.add(id);

@@ -3,8 +3,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import type { TaskId } from '../core/cleaning';
 import { CleanSurface } from './surface';
+import type { SurfaceKind } from './surface';
+import { getLevel } from '../core/levels';
+import type { LevelId } from '../core/levels';
 
-const palette = { cream: 0xe3dfcd, wall: 0xeae4d0, dark: 0x34433b, yellow: 0xf6cc29, terracotta: 0xc97e59, green: 0x647b4c };
+const palette = { cream: 0xf7f1d4, wall: 0xfff7e7, dark: 0x2f4e59, yellow: 0xffd51b, terracotta: 0xf19375, green: 0x59b98c };
 const vec = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
 
 export class World {
@@ -21,21 +24,26 @@ export class World {
   private readonly warmLight: THREE.PointLight;
   private readonly resizeObserver: ResizeObserver;
   private readonly homeTarget = vec(0, 0.65, 0);
+  private readonly sunlight: THREE.DirectionalLight;
+  private readonly hemisphere: THREE.HemisphereLight;
+  private night = false;
 
-  constructor(readonly container: HTMLElement) {
+  constructor(readonly container: HTMLElement, readonly levelId: LevelId = 'courtyard') {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.18;
-    this.renderer.setClearColor(0xf3f1e7);
-    this.renderer.domElement.setAttribute('aria-label', '可交互的三维清洁庭院');
+    const background = new THREE.Color(getLevel(levelId).background);
+    this.renderer.setClearColor(background);
+    this.renderer.domElement.setAttribute('aria-label', `可交互的三维清洁场景：${getLevel(levelId).name}`);
     this.renderer.domElement.setAttribute('role', 'img');
     this.container.append(this.renderer.domElement);
-    this.scene.fog = new THREE.Fog(0xf3f1e7, 24, 48);
-    this.scene.add(new THREE.HemisphereLight(0xfffcf0, 0x829b84, 2.5));
-    const sunlight = new THREE.DirectionalLight(0xffefd0, 3.6);
+    this.scene.fog = new THREE.Fog(background, 24, 48);
+    this.hemisphere = new THREE.HemisphereLight(0xf5fcff, 0x82a8b1, 2.4);
+    this.scene.add(this.hemisphere);
+    const sunlight = this.sunlight = new THREE.DirectionalLight(0xfff5e4, 3.3);
     sunlight.position.set(-3, 10, 6);
     sunlight.castShadow = true;
     sunlight.shadow.mapSize.set(2048, 2048);
@@ -46,7 +54,18 @@ export class World {
     this.warmLight = new THREE.PointLight(0xffc85a, 0, 8);
     this.warmLight.position.set(0, 3, -1.5);
     this.scene.add(this.warmLight);
-    this.buildCourtyard();
+    if (levelId === 'courtyard') this.buildCourtyard();
+    else if (levelId === 'glass') { this.homeTarget.y = 1.2; this.buildGlass(); }
+    else if (levelId === 'kitchen') this.buildKitchen();
+    else this.buildFabric();
+    for (const [x, y, z] of [[-6, 4, -5], [6, 3.7, -7]]) {
+      const cloud = new THREE.Group();
+      for (let i = 0; i < 3; i++) {
+        const puff = new THREE.Mesh(new THREE.SphereGeometry(0.45 + i * 0.08, 16, 10), this.material(0xffffff));
+        puff.position.set(i * 0.42, i === 1 ? 0.12 : 0, 0); puff.scale.y = 0.5; cloud.add(puff);
+      }
+      cloud.position.set(x, y, z); this.scene.add(cloud);
+    }
     const points = new Float32Array(90);
     for (let i = 0; i < points.length; i += 3) { points[i] = Math.sin(i * 3.71) * 4; points[i + 1] = 1 + (i % 9) * 0.32; points[i + 2] = Math.cos(i * 1.71) * 3; }
     this.pollen = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(points, 3)), new THREE.PointsMaterial({ color: 0xe1c66a, size: 0.035, transparent: true, opacity: 0.4, depthWrite: false }));
@@ -102,8 +121,8 @@ export class World {
     return mesh;
   }
 
-  private plane(id: string, task: TaskId, width: number, height: number, position: THREE.Vector3, horizontal: boolean, kind: 'wood' | 'stone'): void {
-    const surface = new CleanSurface({ id, task, area: width * height, width: kind === 'stone' ? 96 : 64, height: kind === 'stone' ? 48 : 16 }, new THREE.PlaneGeometry(width, height), width, height, kind);
+  private plane(id: string, task: TaskId, width: number, height: number, position: THREE.Vector3, horizontal: boolean, kind: SurfaceKind): void {
+    const surface = new CleanSurface({ id, task, area: width * height, width: kind === 'stone' ? 96 : 64, height: kind === 'wood' ? 16 : kind === 'stone' ? 48 : 64 }, new THREE.PlaneGeometry(width, height), width, height, kind);
     surface.mesh.position.copy(position);
     if (horizontal) surface.mesh.rotation.x = -Math.PI / 2;
     this.surfaces.push(surface);
@@ -144,6 +163,96 @@ export class World {
       const bush = this.solid(new THREE.IcosahedronGeometry(0.37, 1), i % 2 ? 0x7d915d : palette.green, vec(-3.3 + i * 0.5, 0.6, -2.55));
       bush.scale.set(1, 0.85, 0.8);
     }
+  }
+
+  private roomBase(color: number): void {
+    this.box(0, -0.06, 0, 8.4, 0.52, 6.3, color, 0.18);
+    this.box(0, 0.22, 0, 8.25, 0.09, 6.15, 0xfffbef, 0.1);
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 128;
+    const ctx = canvas.getContext('2d')!;
+    const gradient = ctx.createRadialGradient(64, 64, 5, 64, 64, 64);
+    gradient.addColorStop(0, '#47717e44'); gradient.addColorStop(1, '#47717e00');
+    ctx.fillStyle = gradient; ctx.fillRect(0, 0, 128, 128);
+    const texture = new THREE.CanvasTexture(canvas); this.canvasTextures.push(texture);
+    const shadow = new THREE.Mesh(new THREE.PlaneGeometry(13, 11), new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false }));
+    shadow.rotation.x = -Math.PI / 2; shadow.position.y = -0.5; this.scene.add(shadow);
+  }
+
+  private buildGlass(): void {
+    this.roomBase(0x79cbb8);
+    this.box(0, 0.32, 0, 7.9, 0.05, 5.8, 0xe2ead9);
+    // A small real outdoor garden is revealed through the cleaned transparent panes.
+    this.box(0, 0.62, -2.2, 7, 0.6, 1.3, 0x8bd394, 0.15);
+    for (const x of [-2.8, -1.6, 1.4, 2.8]) {
+      const hill = this.solid(new THREE.SphereGeometry(0.65, 16, 12), x < 0 ? 0x68bd93 : 0x94ce75, vec(x, 1.15, -2.4));
+      hill.scale.set(1.25, 0.7, 0.6);
+      this.solid(new THREE.CylinderGeometry(0.04, 0.06, 1.2, 8), 0xb18654, vec(x, 1.5, -2.15));
+      this.solid(new THREE.ConeGeometry(0.45, 1.15, 12), 0x4aa77c, vec(x, 2.3, -2.15));
+    }
+    this.solid(new THREE.SphereGeometry(0.37, 20, 14), 0xffda50, vec(1.2, 3.35, -2.1));
+    for (const x of [-3.3, -1.08, 1.08, 3.3]) this.box(x, 2.12, -0.95, 0.11, 3.5, 0.17, 0xfffcf3);
+    this.box(0, 3.85, -0.95, 6.85, 0.18, 0.23, 0xfffcf3);
+    this.box(0, 0.85, -0.95, 6.8, 0.18, 0.33, 0xe8d3aa);
+    for (const [index, task] of (['window-left', 'window-center', 'window-right'] as const).entries()) {
+      this.plane(`glass-pane-${index}`, task, 2.04, 2.79, vec((index - 1) * 2.2, 2.34, -0.89), false, 'glass');
+    }
+    this.box(-2.3, 0.68, 1.35, 1.8, 0.7, 0.9, 0x77bbaa, 0.12);
+    this.box(-2.3, 1.08, 1.35, 2.0, 0.12, 1.1, 0xe9bd86, 0.08);
+    this.solid(new THREE.CylinderGeometry(0.14, 0.11, 0.22, 20), 0xffebaf, vec(-2.3, 1.25, 1.35));
+    this.pot(2.8, 1.65, 0.65);
+    this.box(0.5, 0.35, 1.65, 1.5, 0.05, 0.8, 0xf0d49d, 0.05);
+  }
+
+  private buildKitchen(): void {
+    this.roomBase(0xefab89);
+    this.box(0, 1.7, -2.7, 7.65, 2.85, 0.18, 0xfff1cf, 0.09);
+    this.box(-3.8, 1.15, -1.2, 0.16, 1.8, 2.9, 0xfff1cf, 0.06);
+    for (const x of [-2.6, -1.3, 0, 1.3, 2.6]) {
+      this.box(x, 0.85, -1.7, 1.21, 1.12, 1.4, 0x6eaaa4, 0.07);
+      this.box(x, 0.95, -0.97, 0.38, 0.06, 0.06, 0xf9d37c);
+    }
+    this.box(0, 1.45, -1.65, 6.8, 0.15, 1.65, 0xfff7e0, 0.06);
+    this.plane('kitchen-stove-top', 'stove', 2.1, 1.3, vec(-1.9, 1.535, -1.55), true, 'steel');
+    this.plane('kitchen-backsplash', 'backsplash', 6.3, 1.15, vec(0, 2.21, -2.59), false, 'tile');
+    this.plane('kitchen-floor-main', 'kitchen-floor', 3.4, 2.0, vec(0.1, 0.284, 1.32), true, 'tile');
+    this.box(1.4, 1.54, -1.65, 1.3, 0.08, 0.88, 0xa0c1c4, 0.13);
+    this.box(1.4, 1.59, -1.65, 0.98, 0.04, 0.65, 0x5e929c, 0.1);
+    this.tube(vec(1.4, 1.6, -2.1), vec(1.4, 2.15, -2.1), 0.035, 0x8faeb4);
+    this.tube(vec(1.4, 2.15, -2.1), vec(1.4, 2.15, -1.8), 0.035, 0x8faeb4);
+    this.solid(new THREE.CylinderGeometry(0.17, 0.14, 0.28, 16), 0xf18e70, vec(2.75, 1.65, -1.65));
+    for (const x of [2.58, 2.75, 2.9]) this.solid(new THREE.SphereGeometry(0.14, 10, 8), 0x59aa73, vec(x, 1.95, -1.65));
+    this.box(-2.55, 2.95, -2.5, 1.15, 0.16, 0.6, 0xf1c88d);
+    for (const x of [-2.8, -2.4]) this.solid(new THREE.CylinderGeometry(0.1, 0.1, 0.23, 12), x === -2.8 ? 0xffac84 : 0x81c3bc, vec(x, 3.14, -2.5));
+    this.pot(3.1, 1.9, 0.5);
+  }
+
+  private buildFabric(): void {
+    this.roomBase(0xb7a1dd);
+    this.box(0, 1.25, -2.8, 7.7, 1.95, 0.16, 0xf7ead9, 0.07);
+    this.box(-3.82, 1.1, -1.2, 0.14, 1.65, 3.2, 0xf7ead9, 0.06);
+    for (const x of [-2, 2]) for (const z of [-1.55, -0.45]) this.box(x, 0.42, z, 0.17, 0.35, 0.17, 0x80684e);
+    this.box(0, 0.7, -1.1, 4.9, 0.6, 1.8, 0xda936a, 0.2);
+    this.box(0, 1.32, -1.93, 4.8, 1.48, 0.4, 0xe7a070, 0.18);
+    for (const x of [-2.4, 2.4]) this.box(x, 1.03, -1.1, 0.42, 0.95, 1.9, 0xe7a070, 0.18);
+    for (let i = 0; i < 3; i++) {
+      const x = (i - 1) * 1.4;
+      this.box(x, 0.98, -1.03, 1.35, 0.23, 1.42, 0xeea373, 0.1);
+      this.plane(`sofa-seat-${i}`, 'sofa', 1.25, 1.32, vec(x, 1.1, -1.03), true, 'fabric');
+      this.plane(`sofa-back-${i}`, 'sofa', 1.3, 0.92, vec(x, 1.5, -1.716), false, 'fabric');
+    }
+    this.box(-1.5, 1.45, -1.57, 0.68, 0.68, 0.24, 0x80aab0, 0.12);
+    this.plane('sofa-cushion', 'cushion', 0.61, 0.61, vec(-1.5, 1.45, -1.437), false, 'rug');
+    this.box(0.3, 0.286, 1.55, 3.7, 0.035, 1.95, 0x65a49d, 0.09);
+    this.plane('living-room-rug', 'rug', 3.55, 1.8, vec(0.3, 0.31, 1.55), true, 'rug');
+    for (const x of [-1.55, -1.35, -1.15, -0.95, -0.75, -0.55, -0.35, -0.15, 0.05, 0.25, 0.45, 0.65, 0.85, 1.05, 1.25, 1.45, 1.65, 1.85, 2.05]) {
+      this.box(x, 0.3, 2.57, 0.035, 0.025, 0.1, 0xc3d5bc, 0.005);
+    }
+    this.solid(new THREE.CylinderGeometry(0.58, 0.58, 0.11, 24), 0xecc799, vec(3.15, 0.95, -1.1));
+    this.solid(new THREE.CylinderGeometry(0.07, 0.11, 0.7, 12), 0x9b7d5e, vec(3.15, 0.59, -1.1));
+    this.box(3.15, 1.05, -1.1, 0.45, 0.08, 0.34, 0xb6a5d8);
+    this.pot(-2.95, 1.6, 0.68);
+    this.tube(vec(3, 0.35, -2.2), vec(3, 2.4, -2.2), 0.035, 0xa68a5a);
+    this.solid(new THREE.ConeGeometry(0.5, 0.55, 24, 1, true), 0xffdf9c, vec(3, 2.6, -2.2));
   }
 
   private buildBicycle(): void {
@@ -221,7 +330,7 @@ export class World {
 
   resize(): void {
     const { width, height } = this.container.getBoundingClientRect();
-    const span = width < 700 ? 18.3 : width < 1100 ? 12.2 : 9.7;
+    const span = width < 700 ? 22 : height < 550 ? 12.5 : width < 1100 ? 12.2 : 10;
     this.camera.left = -span * width / height / 2; this.camera.right = span * width / height / 2;
     this.camera.top = span / 2; this.camera.bottom = -span / 2;
     this.camera.updateProjectionMatrix(); this.renderer.setSize(width, height);
@@ -242,7 +351,9 @@ export class World {
   focusTask(task: TaskId): void {
     const damping = this.controls.enableDamping;
     this.controls.enableDamping = false; this.controls.update();
-    const target = task === 'bicycle' ? vec(-1.6, 1.1, 0) : task === 'bench' ? vec(1.55, 0.9, -1.2) : vec(0.2, 0.3, 1.6);
+    const matches = this.surfaces.filter((surface) => surface.spec.task === task);
+    if (!matches.length) { this.controls.enableDamping = damping; return; }
+    const target = matches.reduce((sum, surface) => sum.add(surface.mesh.position), vec(0, 0, 0)).multiplyScalar(1 / matches.length);
     this.camera.position.copy(target).add(vec(9, 10.5, 13));
     this.controls.target.copy(target); this.camera.zoom = containerWidth(this.container) < 700 ? 1.35 : 1.45;
     this.camera.updateProjectionMatrix(); this.controls.update();
@@ -254,9 +365,18 @@ export class World {
     return this.raycaster.intersectObjects(this.occluders, false)[0];
   }
 
-  render(time: number, progress: number): void {
-    this.controls.update(); this.pollen.rotation.y = time * 0.012;
-    this.warmLight.intensity = progress * 3;
+  setEnvironment(night: boolean): void {
+    this.night = night;
+    const background = new THREE.Color(night ? '#233f60' : getLevel(this.levelId).background);
+    this.renderer.setClearColor(background); (this.scene.fog as THREE.Fog).color.copy(background);
+    this.hemisphere.intensity = night ? 0.85 : 2.4;
+    this.sunlight.intensity = night ? 0.8 : 3.3;
+  }
+
+  render(time: number, progress: number, motion = true): void {
+    this.controls.update(); if (motion) this.pollen.rotation.y = time * 0.012;
+    this.pollen.visible = motion;
+    this.warmLight.intensity = progress * (this.night ? 7 : 2);
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -266,7 +386,7 @@ export class World {
     this.scene.traverse((object) => { if (object instanceof THREE.Mesh || object instanceof THREE.Points) { geometries.add(object.geometry); for (const m of Array.isArray(object.material) ? object.material : [object.material]) materials.add(m); } });
     geometries.forEach((g) => g.dispose()); materials.forEach((m) => m.dispose());
     this.surfaces.forEach((s) => s.texture.dispose()); this.canvasTextures.forEach((t) => t.dispose());
-    this.renderer.dispose(); this.renderer.domElement.remove();
+    this.renderer.dispose(); this.renderer.forceContextLoss(); this.renderer.domElement.remove();
   }
 }
 

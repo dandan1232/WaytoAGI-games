@@ -44,10 +44,12 @@ test('real cleaning, saved masks, controls, pause and restart', async ({ page })
   await page.waitForTimeout(400); expect((await state(page)).camera).not.toEqual(camera);
   await page.getByRole('button', { name: '复位视角', exact: true }).click();
   await expect.poll(async () => (await state(page)).camera[0]).toBeCloseTo(9, 1);
-  await page.getByRole('button', { name: '重新开始', exact: true }).click();
-  await page.getByRole('button', { name: '保留进度，返回庭院', exact: true }).click();
+  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await page.getByRole('button', { name: '重新开始本关', exact: true }).click();
+  await page.getByRole('button', { name: '保留进度，返回场景', exact: true }).click();
   expect((await state(page)).progress).toBeCloseTo(cleaned, 7);
-  await page.getByRole('button', { name: '重新开始', exact: true }).click();
+  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await page.getByRole('button', { name: '重新开始本关', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: '重新开始', exact: true }).click();
   expect((await state(page)).progress).toBe(0);
   await page.reload(); await expect.poll(async () => (await state(page)).progress).toBe(0);
@@ -70,14 +72,14 @@ test('all missions can be completed with actual surface pointer input', async ({
     }
     expect((await state(page)).tasks[task], `${task} can be finished`).toBe(1);
   }
-  await expect(page.getByRole('heading', { name: '你洗亮了这一小片世界。' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '庭院日常焕新完成！' })).toBeVisible();
   expect((await state(page)).complete).toBe(true);
   await expect(page.getByTestId('total-progress')).toHaveText('100');
-  await page.getByRole('button', { name: '欣赏我的庭院' }).click();
+  await page.getByRole('button', { name: '欣赏我的成果' }).click();
   await page.mouse.move(140, 40); await page.waitForTimeout(3000);
   await page.screenshot({ path: 'work/verified-clean.png' });
   await page.reload();
-  await expect(page.getByRole('heading', { name: '你洗亮了这一小片世界。' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '庭院日常焕新完成！' })).toBeVisible();
 });
 
 test('mobile layout, touch cleaning and recovery from corrupt storage', async ({ browser }) => {
@@ -129,6 +131,6 @@ test('WebGL initialization failure gives a usable recovery page', async ({ page 
     });
   });
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: '这座庭院还没能展开。' })).toBeVisible();
-  await expect(page.getByRole('link', { name: '重新打开庭院' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '这个小世界还没能展开。' })).toBeVisible();
+  await expect(page.getByRole('link', { name: '重新打开小世界' })).toBeVisible();
 });
