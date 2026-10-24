@@ -2,7 +2,9 @@
 
 根据德国卡赫创意 brief 制作的 3D 清洁互动原型。在一座微缩庭院里，洗净单车、长椅和地砖，让日常空间重新焕发色彩。
 
-本仓库先交付可本地运行的浏览器游戏，不包含账号、支付或在线服务。
+**[在线试玩 → clean-a-little.vercel.app](https://clean-a-little.vercel.app)**
+
+支持本地运行和 Vercel 托管，游戏逻辑与存档均在浏览器中完成。
 
 ![3D 清洁庭院](docs/screenshots/courtyard.png)
 
