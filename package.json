@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "A small 3D courtyard cleaning game inspired by the Kärcher creative brief.",
+  "description": "A four-scene 3D cleaning game with draggable tools, inspired by the Kärcher creative brief.",
+  "license": "MIT",
   "engines": { "node": ">=22.14.0" },
   "scripts": {
     "dev": "vite --host 127.0.0.1",
