@@ -48,3 +48,9 @@ npm.cmd exec --yes --package vercel@latest -- vercel deploy --prod --scope danda
 后续更新应检查首页 HTTP 200、脚本和样式加载、WebGL 初始化、开始清洁、实际污渍进度变化和刷新恢复。以 Vercel `READY` 状态和实际浏览器验收作为上线完成依据。
 
 浏览器存档按网站来源隔离，localhost 的进度不会自动迁移到 Vercel 域名。
+
+## 厂商设备更新（2026-10-25）
+
+素材提交 `829fbb5`、设备与交互提交 `0644436` 已推送 `main`，由现有 GitHub 集成自动部署，继续使用原公开域名。设备代码对应线上入口脚本 `/assets/index-C_ilBheA.js`；原始 `images/` 不上传，五张 WebP 随静态站点提供。
+
+独立未登录 Chrome 线上复验通过：HTTP 200；KHB AIR 实际清洗使地砖达到 5%，刷新恢复 5%；四款产品图和 KHB AIR 折叠图均可加载；装备库可返回继续游戏；390×844 手机页面无横向溢出；无页面 / 控制台错误、警告和失败请求；生产版本不暴露开发测试入口。原有玩家存档格式保持兼容。
