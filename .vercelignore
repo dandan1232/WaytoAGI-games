@@ -1,0 +1,14 @@
+.git
+.vercel
+node_modules
+dist
+work
+test-results
+playwright-report
+docs
+e2e
+tests
+scripts
+*.log
+.env
+.env.*

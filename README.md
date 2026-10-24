@@ -13,6 +13,7 @@
 - [开发、验证与里程碑](docs/development.md)
 - [技术决策记录](docs/decisions/0001-browser-prototype.md)
 - [浏览器验收与已知限制](docs/verification.md)
+- [Vercel 部署说明](docs/deployment.md)
 
 ## 本地开发
 
