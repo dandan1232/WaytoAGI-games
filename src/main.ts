@@ -1,11 +1,12 @@
-import { CleaningSession } from './core/cleaning';
+import './styles.css';
+import { Game } from './game/game';
 
-const session = new CleaningSession([]);
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <main style="font-family:system-ui,sans-serif;max-width:720px;margin:12vh auto;padding:32px;background:#f8f6ed;border-radius:24px;color:#252b27">
-    <p style="letter-spacing:.16em;font-size:12px">CLEAN A LITTLE / 工程里程碑 M2</p>
-    <h1>清洁一平方米</h1>
-    <p>清洁与存档模块已准备好。下一里程碑接入可玩的 3D 微缩庭院。</p>
-    <p>初始清洁进度：${session.progress * 100}%</p>
-    <p>开发与验收记录见仓库 docs/。</p>
-  </main>`;
+const root = document.querySelector<HTMLDivElement>('#app')!;
+let game: Game | undefined;
+try {
+  game = new Game(root);
+} catch (error) {
+  console.error('Unable to initialize the courtyard', error);
+  root.innerHTML = '<main class="fallback"><h1>这座庭院还没能展开。</h1><p>请使用支持 WebGL 2 的新版 Chrome、Edge 或 Safari，检查浏览器硬件加速设置后重试。</p><a href="./">重新打开庭院</a></main>';
+}
+if (import.meta.hot) import.meta.hot.dispose(() => game?.dispose());
