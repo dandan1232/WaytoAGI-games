@@ -514,15 +514,23 @@ a {
   display:flex;
   align-items:center;
   gap:9px;
-  padding:0 8px 0 2px
+  padding:0 8px 0 2px;
+  background:transparent;
+  border-radius:10px;
+  min-height:44px;
+  text-align:left
 }
 
+.tool-description:hover { background:#f3efda }
+.tool-device img { width:40px; height:40px; object-fit:contain }
+.tool-device-name small { color:#68745f }
+
 .tool-device {
-  width:36px;
-  height:38px;
+  width:44px;
+  height:44px;
   display:grid;
   place-items:center;
-  background:#f7d633;
+  background:#f7e68d;
   border-radius:10px
 }
 
@@ -928,6 +936,69 @@ a {
   stroke:#cfb832
 }
 
+.device-view {
+  position:absolute;
+  right:48px;
+  bottom:62px;
+  width:196px;
+  display:flex;
+  flex-direction:column;
+  pointer-events:none;
+  user-select:none
+}
+.device-caption { order:1; display:flex; align-items:center; gap:8px; margin:10px 0 0 24px; font-size:10px; color:#68745f }
+.device-caption strong { display:block; font-size:17px; letter-spacing:.04em; margin-top:4px; color:#344138 }
+.device-caption-line { width:20px; height:2px; background:#d8b827 }
+.device-image { position:relative; width:100%; filter:drop-shadow(7px 12px 8px #37452b24); transition:filter .2s }
+.device-image>img { display:block; width:100%; height:auto }
+#device-nozzle { position:absolute; left:7%; top:15%; width:0; height:0 }
+.device-view.is-spraying .device-image { filter:drop-shadow(0 0 12px #f4d74e88) }
+.intro-equipment { display:flex; align-items:center; justify-content:center; gap:19px; margin:-10px 0 22px; text-align:left }
+.intro-equipment>img { width:94px; height:88px; object-fit:contain }
+.intro-equipment>span { display:flex; flex-direction:column; gap:7px }
+.intro-equipment small { font-size:10px; color:#6f7b63 }
+.intro-equipment strong { font-size:23px; letter-spacing:.03em; color:#303b32 }
+.intro-equipment>span>span { font-size:10px; color:#6f7b63 }
+
+.equipment-modal {
+  width:min(830px,calc(100% - 32px));
+  padding:27px 30px 22px;
+  text-align:left;
+  background:#fbfaf3
+}
+.equipment-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:12px }
+.equipment-heading .eyebrow { color:#65715c; font-size:11px; letter-spacing:.1em; margin:0 0 8px }
+.equipment-heading h2 { margin:0; font-size:25px }
+.equipment-close { flex-shrink:0; width:44px; height:44px; border:1px solid #d9ddcd; border-radius:50%; background:transparent; font-size:25px; line-height:1; color:#53604d }
+.equipment-close:hover { background:#efeedf }
+.equipment-list { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:23px 0 18px }
+.equipment-choice { position:relative; display:flex; flex-direction:column; align-items:center; padding:9px 6px 13px; border:1px solid #dedfce; border-radius:13px; background:#fffefa; transition:border-color .18s,background .18s }
+.equipment-choice:hover { border-color:#9da68c }
+.equipment-choice.active { border-color:#c9aa1b; background:#fcf5d5; box-shadow:inset 0 -3px #e3c329 }
+.equipment-thumb { width:100%; height:65px; display:grid; place-items:center; margin-bottom:8px }
+.equipment-thumb img { display:block; width:90px; height:65px; object-fit:contain; mix-blend-mode:multiply }
+.equipment-choice strong { font-size:13px; letter-spacing:.02em }
+.equipment-choice small { font-size:10px; margin-top:5px; color:#59664f; line-height:1.5 }
+.equipment-detail { display:grid; grid-template-columns:1.05fr 1fr; gap:25px; min-height:286px; padding:20px; background:#fff; border:1px solid #edeee3; border-radius:15px }
+.equipment-photo { position:relative; min-height:250px; display:flex; align-items:center; justify-content:center; padding:12px 10px 25px; overflow:hidden }
+.equipment-photo img { display:block; max-width:100%; width:100%; height:230px; object-fit:contain }
+.equipment-photo-note { position:absolute; bottom:0; font-size:10px; color:#6d7664 }
+.equipment-info { padding:4px 0 }
+.equipment-status { display:inline-block; font-size:10px; padding:5px 8px; border-radius:5px; color:#59664e; background:#eef0e6 }
+.equipment-status.is-current { background:#faec9e; color:#544d21 }
+.equipment-info h3 { margin:12px 0 3px; font-size:29px; line-height:1.2; letter-spacing:-.02em; color:#303b32 }
+.equipment-name { margin:0; font-size:14px; font-weight:600 }
+.equipment-use { margin:13px 0 10px; color:#56664d; font-size:11px }
+.equipment-description { margin:0; color:#68725e; font-size:12px; line-height:1.9 }
+.equipment-mission { margin:14px 0 0; font-size:11px; color:#495c3e; line-height:1.7 }
+.equipment-angles { display:flex; gap:8px; margin-top:13px }
+.angle-button { min-height:44px; padding:9px 12px; border:1px solid #d9ddcd; background:#fff; border-radius:8px; font-size:11px }
+.angle-button.active { border-color:#b5a048; background:#fcf4cb }
+.equipment-preview-note { font-size:11px; line-height:1.7; color:#717961; margin:12px 0 0 }
+.equipment-bottom { display:flex; align-items:center; justify-content:space-between; gap:20px; padding-top:19px }
+.equipment-bottom>p { font-size:11px; color:#65715b; margin:0 }
+.equipment-bottom .primary-button { width:auto; min-width:160px; min-height:44px }
+
 .fallback {
   position:relative;
   max-width:560px;
@@ -1032,8 +1103,10 @@ a {
     right:25px
   }
   .tool-description {
-    display:none
+    display:flex;
+    padding:0
   }
+  .tool-device-name { display:none }
   .toolbar-divider:first-of-type {
     display:none
   }
@@ -1043,6 +1116,7 @@ a {
   .target-hint {
     bottom:135px
   }
+  .device-view { right:28px; width:160px; bottom:54px }
 }
 
 @media(max-width:700px) {
@@ -1192,13 +1266,14 @@ a {
     bottom:50px;
     border-radius:13px;
     padding:7px 9px;
-    gap:2px;
+    gap:3px;
     max-width:calc(100% - 36px)
   }
   .nozzle {
     font-size:9px;
     padding:10px 9px;
-    gap:5px
+    gap:5px;
+    min-height:44px
   }
   .nozzle kbd {
     display:none
@@ -1208,8 +1283,8 @@ a {
     height:15px
   }
   .toolbar>.icon-button {
-    width:30px;
-    height:30px
+    width:36px;
+    height:44px
   }
   .toolbar-divider {
     height:24px;
@@ -1264,6 +1339,51 @@ a {
   .reticle {
     display:none
   }
+  .device-view { right:24px; bottom:247px; width:94px }
+  .device-caption { margin:5px 0 0; gap:5px; font-size:8px }
+  .device-caption strong { font-size:11px; margin-top:2px }
+  .device-caption-line { width:10px }
+  .tool-device { width:36px; height:44px; background:transparent }
+  .tool-device img { width:36px; height:38px }
+  .equipment-modal { padding:20px 17px 17px }
+  .equipment-heading .eyebrow { font-size:9px; margin-bottom:5px }
+  .equipment-heading h2 { font-size:18px }
+  .equipment-list { gap:6px; margin:17px 0 12px }
+  .equipment-choice { padding:7px 3px 10px; border-radius:9px }
+  .equipment-thumb { height:47px; margin-bottom:6px }
+  .equipment-thumb img { width:55px; height:47px }
+  .equipment-choice strong { font-size:10px; white-space:nowrap }
+  .equipment-choice small { display:none }
+  .equipment-detail { grid-template-columns:1fr; gap:10px; padding:14px; min-height:0 }
+  .equipment-photo { min-height:0; height:154px; padding:0 0 17px }
+  .equipment-photo img { height:136px; max-width:100% }
+  .equipment-photo-note { font-size:9px }
+  .equipment-info { padding:0 }
+  .equipment-info h3 { font-size:24px; margin-top:9px }
+  .equipment-name { font-size:12px }
+  .equipment-use { margin:9px 0 7px; font-size:10px }
+  .equipment-description { font-size:11px; line-height:1.8 }
+  .equipment-mission { font-size:10px; margin-top:10px }
+  .equipment-angles { margin-top:10px }
+  .equipment-bottom { padding-top:13px }
+  .equipment-bottom>p { display:none }
+  .equipment-bottom .primary-button { width:100% }
+  .intro-equipment { gap:15px; margin-bottom:17px }
+  .intro-equipment strong { font-size:21px }
+}
+
+@media(max-height:800px) and (min-width:701px) {
+  .device-view { width:85px; bottom:35px }
+  .device-caption { display:none }
+}
+
+@media(max-height:720px) and (min-width:701px) {
+  .equipment-modal { padding:20px 24px 18px }
+  .equipment-list { margin:14px 0 12px }
+  .equipment-thumb,.equipment-thumb img { height:45px }
+  .equipment-detail { padding:15px; min-height:0 }
+  .equipment-photo { min-height:200px }
+  .equipment-photo img { height:185px }
 }
 
 @media(prefers-reduced-motion:reduce) {

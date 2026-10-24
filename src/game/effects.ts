@@ -18,11 +18,11 @@ export class Effects {
     scene.add(this.beam, this.particles, this.ring);
   }
 
-  update(dt: number, spraying: boolean, hit: THREE.Intersection | undefined, camera: THREE.Camera, radius: number): void {
+  update(dt: number, spraying: boolean, hit: THREE.Intersection | undefined, camera: THREE.Camera, radius: number, nozzle: { x: number; y: number }): void {
     this.beam.visible = spraying && !!hit;
     this.ring.visible = spraying && !!hit?.object.userData.surfaceId;
     if (spraying && hit) {
-      const origin = new THREE.Vector3(0.6, -0.72, -0.4).unproject(camera);
+      const origin = new THREE.Vector3(nozzle.x, nozzle.y, -0.4).unproject(camera);
       for (let i = 0; i < 12; i++) {
         const spread = radius * 0.3;
         this.beamPositions.set([origin.x, origin.y, origin.z, hit.point.x + (Math.random() - 0.5) * spread, hit.point.y + (Math.random() - 0.5) * spread, hit.point.z + (Math.random() - 0.5) * spread], i * 6);

@@ -40,6 +40,7 @@ try {
   const errors = [];
   const warnings = [];
   const externalRequests = [];
+  const failedRequests = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(message.text());
@@ -48,6 +49,8 @@ try {
   page.on('request', (request) => {
     if (!request.url().startsWith(baseURL)) externalRequests.push(request.url());
   });
+  page.on('requestfailed', (request) => failedRequests.push(request.url()));
+  page.on('response', (response) => { if (response.status() >= 400) failedRequests.push(`${response.status()} ${response.url()}`); });
 
   await page.goto(baseURL);
   await page.getByRole('button', { name: '开始清洁', exact: true }).click();
@@ -58,8 +61,26 @@ try {
   await page.mouse.up();
   const progress = await page.locator('#percent-paving').textContent();
   if (progress === '0%') throw new Error('Production cleaning did not change the surface');
-  if (errors.length || warnings.length || externalRequests.length) throw new Error(JSON.stringify({ errors, warnings, externalRequests }));
-  console.log(JSON.stringify({ productionHTTP: 200, pavingProgress: progress, errors, warnings, externalRequests, developmentProbe: false }));
+  await page.getByRole('button', { name: '查看卡赫装备库，当前设备 KHB AIR' }).click();
+  const products = ['khb-air', 'wv2', 'sc4d', 'puzzi-8-1'];
+  for (const product of products) {
+    await page.locator(`[data-product="${product}"]`).click();
+    await page.waitForFunction(() => {
+      const image = document.querySelector('#equipment-hero');
+      return image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0;
+    });
+  }
+  await page.locator('[data-product="khb-air"]').click();
+  await page.getByRole('button', { name: '折叠收纳', exact: true }).click();
+  await page.waitForFunction(() => {
+    const image = document.querySelector('#equipment-hero');
+    return image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0 && image.src.endsWith('khb-air-folded.webp');
+  });
+  await page.getByRole('button', { name: '返回庭院', exact: true }).click();
+  await page.reload();
+  if (await page.locator('#percent-paving').textContent() !== progress) throw new Error('Production progress was not restored');
+  if (errors.length || warnings.length || externalRequests.length || failedRequests.length) throw new Error(JSON.stringify({ errors, warnings, externalRequests, failedRequests }));
+  console.log(JSON.stringify({ productionHTTP: 200, pavingProgress: progress, savedProgressRestored: true, products, foldingPhoto: true, errors, warnings, externalRequests, failedRequests, developmentProbe: false }));
 } finally {
   await browser?.close();
   server.kill();

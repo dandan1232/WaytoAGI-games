@@ -1,5 +1,6 @@
 import { TASKS } from '../core/cleaning';
 import type { CleaningSession, TaskId } from '../core/cleaning';
+import { EQUIPMENT, KHB_IMAGE, KHB_FOLDED_IMAGE, equipmentDetail, equipmentLibrary } from './equipment';
 
 const paths: Record<string, string> = {
   spark: '<path d="m12 2 2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4Z"/>',
@@ -33,6 +34,7 @@ export interface Actions {
   restart: () => void;
   look: () => void;
   focus: (task: TaskId) => void;
+  equipment: () => void;
 }
 
 export class Interface {
@@ -41,6 +43,9 @@ export class Interface {
   private readonly cleanup = new AbortController();
   private toastTimer = 0;
   private lastTarget: TaskId | undefined | null = null;
+  private readonly resizeObserver: ResizeObserver;
+  readonly sprayOrigin = { x: 0.6, y: -0.72 };
+  private deviceSpraying = false;
 
   constructor(readonly root: HTMLElement, private readonly actions: Actions) {
     root.innerHTML = `
@@ -74,8 +79,12 @@ export class Interface {
       <div class="target-hint" id="target-hint" aria-live="polite">${icon('mouse')} 按住左键清洗，右键转动庭院</div>
       <div class="reticle" id="reticle" hidden><span></span><i></i></div>
       <div class="toast" id="toast" role="status" aria-live="polite"></div>
+      <div class="device-view" id="device-view" aria-label="本关设备：卡赫 KHB AIR 无线折叠清洗机">
+        <div class="device-caption"><span class="device-caption-line"></span><span>本关清洁搭档<strong>KHB AIR</strong></span></div>
+        <div class="device-image"><img id="held-device" src="${KHB_IMAGE}" alt="卡赫 KHB AIR 无线折叠清洗机" width="689" height="640" decoding="async"><span id="device-nozzle" aria-hidden="true"></span></div>
+      </div>
       <nav class="toolbar" aria-label="清洁工具">
-        <div class="tool-description"><span class="tool-device">${icon('water')}</span><span><strong>随心清洗</strong><small>选一种喜欢的节奏</small></span></div>
+        <button class="tool-description" id="equipment" aria-label="查看卡赫装备库，当前设备 KHB AIR" title="查看卡赫装备库"><span class="tool-device"><img src="${KHB_IMAGE}" alt="" width="44" height="44"></span><span class="tool-device-name"><strong>KHB AIR</strong><small>卡赫装备库 <span aria-hidden="true">↗</span></small></span></button>
         <span class="toolbar-divider"></span>
         <button class="nozzle active" id="nozzle-wide" aria-pressed="true">${icon('water')}<span>广角清洗</span><kbd>1</kbd></button>
         <button class="nozzle" id="nozzle-detail" aria-pressed="false">${icon('focus')}<span>集中点喷</span><kbd>2</kbd></button>
@@ -87,10 +96,45 @@ export class Interface {
       <dialog class="modal" id="modal" aria-labelledby="modal-title"></dialog>`;
     this.scene = this.get('scene');
     this.dialog = this.get<HTMLDialogElement>('modal');
-    const buttons: Record<string, () => void> = { help: actions.help, sound: actions.sound, pause: actions.pause, 'nozzle-wide': () => actions.nozzle('wide'), 'nozzle-detail': () => actions.nozzle('detail'), 'reset-view': actions.resetView, 'reset-game': actions.resetPrompt };
+    const buttons: Record<string, () => void> = { help: actions.help, sound: actions.sound, pause: actions.pause, equipment: actions.equipment, 'nozzle-wide': () => actions.nozzle('wide'), 'nozzle-detail': () => actions.nozzle('detail'), 'reset-view': actions.resetView, 'reset-game': actions.resetPrompt };
     for (const [id, handler] of Object.entries(buttons)) this.get(id).addEventListener('click', handler, { signal: this.cleanup.signal });
     for (const { id } of TASKS) this.get(`task-${id}`).addEventListener('click', () => actions.focus(id), { signal: this.cleanup.signal });
     this.dialog.addEventListener('cancel', (event) => { event.preventDefault(); actions.dismiss(); }, { signal: this.cleanup.signal });
+    this.dialog.addEventListener('click', (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const choice = target?.closest<HTMLButtonElement>('[data-product]');
+      const product = EQUIPMENT.find((item) => item.id === choice?.dataset.product);
+      if (product) {
+        this.get('equipment-detail').innerHTML = equipmentDetail(product.id);
+        for (const button of this.dialog.querySelectorAll<HTMLButtonElement>('[data-product]')) {
+          const selected = button.dataset.product === product.id;
+          button.classList.toggle('active', selected); button.setAttribute('aria-pressed', String(selected));
+        }
+      }
+      const angle = target?.closest<HTMLButtonElement>('[data-angle]');
+      if (angle) {
+        const folded = angle.dataset.angle === 'folded';
+        const image = this.get<HTMLImageElement>('equipment-hero');
+        image.src = folded ? KHB_FOLDED_IMAGE : KHB_IMAGE;
+        image.alt = `卡赫 KHB AIR ${folded ? '折叠收纳' : '展开机身'}厂商产品图`;
+        for (const button of this.dialog.querySelectorAll<HTMLButtonElement>('[data-angle]')) {
+          const selected = button === angle;
+          button.classList.toggle('active', selected); button.setAttribute('aria-pressed', String(selected));
+        }
+      }
+    }, { signal: this.cleanup.signal });
+    const nozzleElement = this.get('device-nozzle');
+    const updateOrigin = () => {
+      if (!nozzleElement.isConnected) { this.resizeObserver.disconnect(); return; }
+      const scene = this.scene.getBoundingClientRect();
+      if (!scene.width || !scene.height) return;
+      const nozzle = nozzleElement.getBoundingClientRect();
+      this.sprayOrigin.x = (nozzle.x - scene.x) / scene.width * 2 - 1;
+      this.sprayOrigin.y = 1 - (nozzle.y - scene.y) / scene.height * 2;
+    };
+    this.resizeObserver = new ResizeObserver(updateOrigin);
+    this.resizeObserver.observe(root); this.resizeObserver.observe(this.get('device-view'));
+    updateOrigin();
   }
 
   private get<T extends HTMLElement = HTMLElement>(id: string): T { return this.root.querySelector<T>(`#${id}`)!; }
@@ -131,6 +175,9 @@ export class Interface {
   cursor(x: number, y: number, visible: boolean, spraying: boolean, task?: TaskId): void {
     const cursor = this.get('reticle'); cursor.hidden = !visible; cursor.style.left = `${x}px`; cursor.style.top = `${y}px`;
     cursor.classList.toggle('spraying', spraying); cursor.classList.toggle('on-target', !!task);
+    if (this.deviceSpraying !== spraying) {
+      this.get('device-view').classList.toggle('is-spraying', spraying); this.deviceSpraying = spraying;
+    }
     if (task !== this.lastTarget) {
       this.get('target-hint').innerHTML = task ? `${icon('water')} ${TASKS.find((item) => item.id === task)!.name} · 按住，让颜色回来` : `${icon('mouse')} 按住清洗 · 右键转动 · 滚轮缩放`;
       this.lastTarget = task;
@@ -145,12 +192,18 @@ export class Interface {
   private modal(html: string, handlers: Record<string, () => void>): void {
     if (this.dialog.open) this.dialog.close();
     this.dialog.innerHTML = html;
+    this.dialog.classList.remove('equipment-modal');
     for (const [id, handler] of Object.entries(handlers)) this.get(id).addEventListener('click', handler, { once: true });
     this.dialog.showModal();
   }
 
   intro(resuming: boolean): void {
-    this.modal(`<div class="modal-mark">${icon('spark')}</div><span class="eyebrow">一小片干净，一整份好心情</span><h2 id="modal-title">先洗净眼前这一小片。</h2><p class="modal-copy">没有倒计时，也没有标准答案。<br>把单车、长椅和地砖，洗回喜欢的样子。</p><div class="control-guide"><span>${icon('mouse')}<strong>按住清洗</strong><small>左键 / 单指拖动</small></span><span>${icon('camera')}<strong>换个角度</strong><small>右键 / 双指拖动</small></span><span>${icon('focus')}<strong>近一点看</strong><small>滚轮 / 双指缩放</small></span></div><button class="primary-button" id="start-game">${resuming ? '继续清洁' : '开始清洁'} ${icon('arrow')}</button><p class="modal-footnote">声音会随操作开启，右上角可随时关闭。</p>`, { 'start-game': this.actions.start });
+    this.modal(`<div class="intro-equipment"><img src="${KHB_IMAGE}" alt="卡赫 KHB AIR 无线折叠清洗机" width="110" height="102"><span><small>今天的清洁搭档</small><strong>KHB AIR</strong><span>卡赫 · 无线折叠清洗机</span></span></div><span class="eyebrow">一小片干净，一整份好心情</span><h2 id="modal-title">先洗净眼前这一小片。</h2><p class="modal-copy">带上 KHB AIR，不赶时间。<br>把单车、长椅和地砖，洗回喜欢的样子。</p><div class="control-guide"><span>${icon('mouse')}<strong>按住清洗</strong><small>左键 / 单指拖动</small></span><span>${icon('camera')}<strong>换个角度</strong><small>右键 / 双指拖动</small></span><span>${icon('focus')}<strong>近一点看</strong><small>滚轮 / 双指缩放</small></span></div><button class="primary-button" id="start-game">${resuming ? '继续清洁' : '开始清洁'} ${icon('arrow')}</button><p class="modal-footnote">声音会随操作开启，右上角可随时关闭。</p>`, { 'start-game': this.actions.start });
+  }
+
+  equipment(): void {
+    this.modal(equipmentLibrary(), { 'close-equipment': this.actions.dismiss, 'return-courtyard': this.actions.dismiss });
+    this.dialog.classList.add('equipment-modal');
   }
 
   pause(): void {
@@ -167,5 +220,5 @@ export class Interface {
   }
 
   close(): void { if (this.dialog.open) this.dialog.close(); }
-  dispose(): void { this.cleanup.abort(); clearTimeout(this.toastTimer); this.close(); }
+  dispose(): void { this.cleanup.abort(); this.resizeObserver.disconnect(); clearTimeout(this.toastTimer); this.close(); }
 }

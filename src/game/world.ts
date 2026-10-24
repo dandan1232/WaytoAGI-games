@@ -144,16 +144,6 @@ export class World {
       const bush = this.solid(new THREE.IcosahedronGeometry(0.37, 1), i % 2 ? 0x7d915d : palette.green, vec(-3.3 + i * 0.5, 0.6, -2.55));
       bush.scale.set(1, 0.85, 0.8);
     }
-    // A stylized equipment station, without claiming to be an industrial product model.
-    this.box(3.35, 0.53, 1.35, 0.62, 0.57, 0.43, palette.yellow, 0.065);
-    this.box(3.35, 0.86, 1.35, 0.38, 0.15, 0.26, palette.dark);
-    this.box(3.35, 0.59, 1.575, 0.4, 0.16, 0.018, palette.dark, 0.005);
-    for (const x of [3.1, 3.6]) {
-      const wheel = this.solid(new THREE.CylinderGeometry(0.13, 0.13, 0.08, 16), 0x343c34, vec(x, 0.35, 1.4));
-      wheel.rotation.z = Math.PI / 2;
-    }
-    const hosePoints = [vec(3.2, 0.3, 1.6), vec(3.0, 0.3, 2.0), vec(3.2, 0.3, 2.55), vec(2.7, 0.3, 2.7), vec(2.4, 0.3, 2.2), vec(2.6, 0.3, 1.9)];
-    this.solid(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(hosePoints), 32, 0.026, 6, false), 0x4b554b, vec(0, 0, 0));
   }
 
   private buildBicycle(): void {

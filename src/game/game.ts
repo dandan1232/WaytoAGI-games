@@ -27,7 +27,7 @@ export class Game {
   private hovering = false;
   private spraying = false;
   private nozzle: 'wide' | 'detail' = 'wide';
-  private dialogKind: 'intro' | 'help' | 'pause' | 'reset' | 'complete' | null = null;
+  private dialogKind: 'intro' | 'help' | 'pause' | 'reset' | 'complete' | 'equipment' | null = null;
   private started = false;
   private seconds = 0;
   private changed = false;
@@ -44,6 +44,7 @@ export class Game {
       sound: () => this.toggleSound(), nozzle: (mode) => this.setNozzle(mode), resetView: () => this.world.resetView(),
       resetPrompt: () => this.resetPrompt(), restart: () => this.restart(), look: () => this.look(),
       focus: (task) => { this.stopSpraying(); this.world.focusTask(task); },
+      equipment: () => this.equipment(),
     });
     this.world = new World(this.ui.scene);
     this.effects = new Effects(this.world.scene);
@@ -101,6 +102,7 @@ export class Game {
   }
   private stopSpraying(): void { this.spraying = false; this.audio.spray(false); }
   private help(): void { this.stopSpraying(); this.dialogKind = 'help'; this.ui.intro(this.started); }
+  private equipment(): void { this.stopSpraying(); this.save(); this.dialogKind = 'equipment'; this.ui.equipment(); }
   private pause(): void {
     this.stopSpraying(); this.save();
     if (this.dialogKind || this.session.completed) return;
@@ -151,7 +153,7 @@ export class Game {
       }
     }
     this.audio.spray(active);
-    this.effects.update(dt, active, hit, this.world.camera, radius);
+    this.effects.update(dt, active, hit, this.world.camera, radius, this.ui.sprayOrigin);
     this.ui.cursor(this.pointerScreen.x, this.pointerScreen.y, this.hovering && !this.dialogKind, active, surface?.spec.task);
     if (time - this.lastHud > 100) { this.ui.update(this.session); this.lastHud = time; }
     if (this.changed && time - this.lastSave > 900) { this.save(); this.lastSave = time; }

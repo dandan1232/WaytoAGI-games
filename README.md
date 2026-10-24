@@ -16,6 +16,7 @@
 - [技术决策记录](docs/decisions/0001-browser-prototype.md)
 - [浏览器验收与已知限制](docs/verification.md)
 - [Vercel 部署说明](docs/deployment.md)
+- [厂商设备与图片素材](docs/product-assets.md)
 
 ## 本地开发
 
@@ -26,7 +27,7 @@ npm ci
 npm run dev
 ```
 
-打开终端显示的本地地址（默认 `http://127.0.0.1:5173`），点击“开始清洁”。运行时无需外部模型、图片、字体或 CDN。
+打开终端显示的本地地址（默认 `http://127.0.0.1:5173`），点击“开始清洁”。依赖和厂商图片均随项目提供，运行时无需第三方图片、模型、字体或 CDN。
 
 ```powershell
 npm test          # 清洁与存档逻辑
@@ -43,6 +44,7 @@ npm run test:production # 构建并验证生产版本
 - 按住鼠标或触屏拖动清洗；切换清洗范围，观察真实的局部污渍消退。
 - 分目标进度、音效、水流反馈和完成展示。
 - 本地保存进度、继续体验和重新开始。
+- KHB AIR 原厂设备图与机头喷水；底部“卡赫装备库”可查看四款机器，支持 KHB AIR 展开 / 折叠图。
 
 ## 操作
 
@@ -60,4 +62,4 @@ npm run test:production # 构建并验证生产版本
 
 浏览器验收默认使用已安装的 Chrome。没有 Chrome 时先运行 `npx playwright install chrome`，或调整 `playwright.config.ts` 的浏览器通道。Windows PowerShell 里向 npm 脚本传递额外参数时，可使用 `npm.cmd`；例如 `npm.cmd run dev -- --host 0.0.0.0`。
 
-当前是本地单关原型，示意设备和喷幅数值用于游戏交互，不代表真实产品参数。活动是否接受游戏投稿仍需确认。
+当前是已上线的单关原型：本关使用 KHB AIR，WV 2、SC4D、PUZZI 8-1 提供设备展示。厂商设备使用照片，喷幅数值用于游戏交互，不代表真实产品参数。活动是否接受游戏投稿仍需确认。
