@@ -10,3 +10,6 @@ playwright-report/
 !.env.example
 .DS_Store
 Thumbs.db
+
+# Manufacturer originals (211 MB) remain local; web copies live in public/products.
+/images/

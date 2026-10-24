@@ -9,6 +9,7 @@ docs
 e2e
 tests
 scripts
+images
 *.log
 .env
 .env.*
