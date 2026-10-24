@@ -11,7 +11,25 @@
 - [开发、验证与里程碑](docs/development.md)
 - [技术决策记录](docs/decisions/0001-browser-prototype.md)
 
-## 计划中的第一版
+## 本地开发
+
+需要 Node.js 22.14+ 与 npm。
+
+```powershell
+npm ci
+npm run dev
+```
+
+打开终端显示的本地地址。当前 M2 提供工程入口和核心逻辑，3D 场景在 M3 接入。
+
+```powershell
+npm test          # 清洁与存档逻辑
+npm run check    # TypeScript
+npm run build    # 类型检查与生产构建
+npm run preview  # 预览生产构建
+```
+
+## 第一版范围
 
 - 一个可旋转查看的 3D 庭院，包含三个清洁目标。
 - 按住鼠标或触屏拖动清洗；切换清洗范围，观察真实的局部污渍消退。
