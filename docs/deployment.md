@@ -54,3 +54,9 @@ npm.cmd exec --yes --package vercel@latest -- vercel deploy --prod --scope danda
 素材提交 `829fbb5`、设备与交互提交 `0644436` 已推送 `main`，由现有 GitHub 集成自动部署，继续使用原公开域名。设备代码对应线上入口脚本 `/assets/index-C_ilBheA.js`；原始 `images/` 不上传，五张 WebP 随静态站点提供。
 
 独立未登录 Chrome 线上复验通过：HTTP 200；KHB AIR 实际清洗使地砖达到 5%，刷新恢复 5%；四款产品图和 KHB AIR 折叠图均可加载；装备库可返回继续游戏；390×844 手机页面无横向溢出；无页面 / 控制台错误、警告和失败请求；生产版本不暴露开发测试入口。原有玩家存档格式保持兼容。
+
+## 四场景与拖动改版上线（2026-10-25）
+
+设计提交 `f52a02c`，实现与验收提交 `0194518`，均已推送 `main` 并通过现有 GitHub 集成发布。公开页面加载 `/assets/index-BfNhKoD8.js`，与本地最终生产构建一致；页面标题更新为“清洁小世界 · Clean a Little”。
+
+执行 `node scripts/verify-production.mjs https://clean-a-little.vercel.app/`，在独立未登录 Chrome 中验证：HTTP 200；庭院地砖实际清洁 5%、中央玻璃 4%、厨房灶台 6%、客厅地毯 4%；刷新恢复当前客厅、实际污渍进度和夜间偏好；机器拖动与松开、四产品图和折叠图、390×844 设置与布局均通过。页面错误、控制台警告、第三方请求、失败请求均为 0；生产构建未暴露开发测试入口。四关的完整通关另已在本地以真实鼠标输入验收。
