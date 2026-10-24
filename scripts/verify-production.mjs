@@ -38,9 +38,13 @@ try {
   });
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const errors = [];
+  const warnings = [];
   const externalRequests = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+    if (message.type() === 'warning') warnings.push(message.text());
+  });
   page.on('request', (request) => {
     if (!request.url().startsWith(baseURL)) externalRequests.push(request.url());
   });
@@ -54,8 +58,8 @@ try {
   await page.mouse.up();
   const progress = await page.locator('#percent-paving').textContent();
   if (progress === '0%') throw new Error('Production cleaning did not change the surface');
-  if (errors.length || externalRequests.length) throw new Error(JSON.stringify({ errors, externalRequests }));
-  console.log(JSON.stringify({ productionHTTP: 200, pavingProgress: progress, errors, externalRequests, developmentProbe: false }));
+  if (errors.length || warnings.length || externalRequests.length) throw new Error(JSON.stringify({ errors, warnings, externalRequests }));
+  console.log(JSON.stringify({ productionHTTP: 200, pavingProgress: progress, errors, warnings, externalRequests, developmentProbe: false }));
 } finally {
   await browser?.close();
   server.kill();

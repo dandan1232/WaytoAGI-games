@@ -24,6 +24,7 @@
 1. 旋转后复位仍发生相机漂移：OrbitControls 保留了阻尼角速度，现于复位与聚焦前消耗剩余惯性。
 2. Windows PowerShell 的 npm.ps1 吞掉附加命令选项：开发文档提供 npm.cmd 和直接 CLI 的执行方式。
 3. 损坏存档验收最初在旧页面关闭前写入数据，被正常的 pagehide 自动保存覆盖：改为在新页面脚本启动前注入损坏数据，保留正确的自动保存行为。
+4. Three.js r186 将旧的 PCFSoftShadowMap 自动降级为 PCFShadowMap 并输出弃用警告：改为直接使用 PCFShadowMap，保持相同阴影效果；生产检查同时拦截控制台警告。
 
 ## 视觉记录
 
